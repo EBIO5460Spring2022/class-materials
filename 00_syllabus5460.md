@@ -56,7 +56,24 @@ You'll need access to computing. If you have a reasonably modern laptop, that's 
 Please upgrade to the latest versions of R and R Studio. I'm assuming you use these tools regularly and are proficient at upgrading already.
 
 #### Texts
-This class is a mash up and I will sample from several texts and papers. Most of it is available free to you but not all of the textbook material can be posted publicly, so some will be posted to the class Google Drive folder.
+This class is a mash up and I will sample from several texts and papers. Most of it is available free to you but not all of the textbook material can be posted publicly, so some will be posted to the class Google Drive folder. One book that we'll base a fair bit of the first part of the semester around is:
+
+* James G, Witten D, Hastie T, Tibshirani R (2021). An Introduction to Statistical Learning: With Applications in R, Second edition. Springer, New York.
+* [Book website](https://www.statlearning.com/)
+
+Other more advanced texts that I personally am referencing extensively include:
+
+* Goodfellow I, Bengio Y, Courville A (2016). Deep Learning. The MIT Press, Cambridge, Massachusetts.
+* Hastie T, Tibshirani R, Friedman JH (2009). The Elements of Statistical Learning: Data Mining, Inference, and Prediction, 2nd ed. Springer, New York, NY.
+
+A text heavily influencing the way I think about the broader topic of data science from an interdisciplinary perspective is:
+
+* Efron B & Hastie T (2016). Computer Age Statistical Inference: Algorithms, Evidence, and Data Science. Cambridge.
+* This text is aimed at masters or first-year PhD students in statistics and data science. After completing this course (and the complementary semester in Part 1), you might find this a useful book with a friendly level of math.
+
+Paperback versions of just about any Springer text can be purchased by University of Colorado students for $25 each. To purchase, do a Chinook search via the CU library (you must be on the campus network or via VPN, not the guest wifi), follow the link to the ebook version, and look for the Springer offer to buy the paperback version. Be aware however that these versions are not in color, which is certainly an issue for interpreting plots!
+
+
 
 #### Grading
 TBA. Here is one idea:
