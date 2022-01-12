@@ -22,29 +22,30 @@ Machine learning is an exciting topic and recent advances are set to revolutioni
 #### Topics
 
 * Machine learning: algorithms for prediction
-* Cross validation
-* k-nearest neighbors (KNN)
-* Regression trees
-* Boosting
-* Random forests
-* Regularization
-* Ensembling
-* Stacking
-* Support vector machines (SVM)
-* Neural nets
-* Deep learning
+* Predictive accuracy and the bias-variance tradeoff
+* Inference algorithm: cross validation
+* Model algorithm: smoothers
+* Training algorithm (optimizer + cost function)
+* Regularization and penalized optimization
+* Decision tree models (regression, classification)
+* Ensemble algorithms: stacking, bagging, random forests, boosting
+* Neural network models and deep learning
+* Stochastic gradient descent and back propagation
+* Neural network model architectures for different problems
+* Training strategies for deep learning
+* Contemporary and emerging applications of machine learning in ecology
 
 #### Where is it pitched?
 This is a practical class. Our aim is to understand the concepts, theory, and algorithms behind the main categories of machine learning algorithms and in particular be able to place any machine learning tool, that typically consists of a collection of algorithms, within a wider data-science context and to identify strengths and weaknesses in its application and when and where it can appropriately be used. A further goal is to be able to combine fundamental algorithms to make your own tools for specific applications. I will try to develop an intuitive understanding of the foundational algorithms and concepts mostly through stochastic simulation and coding plus a bit of basic math. You will code and apply these algorithms to your own datasets. From this foundation you should be able to go deeper through self study.
 
 #### Prerequisites
-We will use R throughout. This is not a beginners class in either R or data science! Ideally you will have taken Part 1 of my EBIO5460 sequence (Part 1: Data Science for Biological Research). If you haven't taken that class it is possible to take the present class but a little catch up will be necessary. I strongly suggest you at least have taken some sort of statistics or computation class, for example, either my grad class "QEE: Quantitative Ecology and Evolution" or "Biometry", or Sam Flaxman's "Computational Biology", or an equivalent intermediate-level data science class. You must already be proficient with R, preferably with experience with your own data. Alternatively, if you are proficient in another language, such as Python, then you should be fine (R is much the same). Proficiency with GitHub is also presumed but I will provide materials to quickly get up to speed if you are not already (don't worry, you will initially only need some basic skills). Please see me to discuss any prerequisite areas you think you might need guidance about.
+We will use R throughout. This is not a beginners class in either R or data science! Ideally you will have taken Part 1 of my EBIO5460 sequence (Part 1: Data Science for Biological Research). If you haven't taken that class it is possible to take the present class but a little catch up will be necessary. I strongly suggest you at least have taken some sort of statistics or computation class, for example, either my grad class "QEE: Quantitative Ecology and Evolution" or "Biometry", or Sam Flaxman's "Computational Biology", or an equivalent intermediate-level data science class. You must already be proficient with R, preferably with experience with your own data. Alternatively, if you are proficient in another language, such as Python, then you should be fine (R is much the same). Proficiency with GitHub is presumed but I will provide materials to quickly get up to speed if you are not already (don't worry, you will initially only need some basic skills). Please see me to discuss any prerequisite areas you think you might need guidance about.
 
 #### The ultimate learning goals
 You will be confident to use machine learning algorithms in your own research. You will have a broad overview of how ecologists are currently using machine learning algorithms to revolutionize ecological research.
 
 #### Learning format
-I'm envisioning a collaborative learning atmosphere. Machine learning is a rapidly advancing field and many new techniques have not yet been applied or are only starting to be applied in ecology. We will explore some of these cutting-edge areas. Early on, I will mostly lecture but will assign weekly reading and coding assignments. Collaboration is encouraged both in and out of class. Later we will explore the contemporary literature in ecology and consider applications of the newest machine learning algorithms. Finally, in an individual project you will apply algorithms to your own data, which ideally will help you address your thesis research. 
+I'm envisioning a collaborative learning atmosphere. Machine learning is a rapidly advancing field and many new techniques have not yet been applied or are only starting to be applied in ecology. We will explore these cutting-edge areas. Early on (about the first third), I will mostly lecture on basic concepts and you will have weekly reading and practical coding assignments. Collaboration is encouraged both in and out of class. Next, in a student-driven discussion and presentation format, we will explore the recent literature in ecology to consider where machine learning is having a revolutionizing impact on research. In an individual project you will apply algorithms to your own data, which ideally will help you address your thesis research. 
 
 I hope that we can create an environment that is relaxed and nonjudgmental so that we will all feel comfortable participating and also that all contributions are valued. I also hope that we can create an environment of respect for each other's learning processes and ideas.
 
@@ -60,13 +61,13 @@ This class is a mash up and I will sample from several texts and papers. Most of
 #### Grading
 TBA. Here is one idea:
 
-Github portfolio of weekly code commits **30%**
+Github portfolio of assignment code commits **30%**
 
 Presentation of contemporary literature **30%**
 
 Participation and peer reviews **10%**
 
-Individual assignment **30%**
+Individual assignment report **30%**
 
 #### Exams
 There will not be an exam. This material is not suited to exams.

@@ -3,26 +3,32 @@ This is the planned timetable for covering topics this semester. It's a work in 
 
 
 
-## Week 1
+## Week 1-2
 * Intro to class
 * What is machine learning?
 * An outline of algorithms for prediction
-* Cross validation
+* Predictive accuracy and the bias-variance tradeoff
+* Inference algorithm: cross validation
+* Model algorithm: smoothers
+* Training algorithm (optimizer + cost function)
 
-## Topics for weeks 2-6
-* k-nearest neighbors (KNN)
-* Regression trees
-* Boosting
-* Random forests
-* Regularization
-* Ensembling
-* Stacking
-* Support vector machines (SVM)
-* Neural nets
-* Deep learning
+## Weeks 3-4
+* Regularization and penalized optimization
+* Decision tree models (regression, classification)
+* Ensemble algorithms: stacking, bagging, random forests, boosting
 
-## Later weeks
+## Weeks 5-6
 
-* Contemporary applications in ecology
+* Neural network models and deep learning
+* Stochastic gradient descent and back propagation
+* Neural network model architectures for different problems
+* Training strategies for deep learning
+
+## Week 7-10
+
+* Contemporary and emerging applications in ecology
+
+## Week 11-15
+
 * Individual project
 
