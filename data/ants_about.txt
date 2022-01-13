@@ -1,0 +1,17 @@
+The data are from Table 2 of Ellison (2004), which in turn are from Gotelli & Ellison (2002).
+
+### variables
+
+site: 22 sites in Connecticut, Massachusetts, Vermont (USA)
+habitat: bog or surrounding forest.
+latitude: decimal degrees.
+elevation: meters above sea level.
+richness: number of ant species found in a 64 m^2 sampling grid.
+
+### Citations
+
+Ellison AM (2004) Bayesian inference in ecology. Ecology Letters 7: 509-520.
+
+Gotelli NJ, Ellison AM (2002) Biogeography at a regional scale: determinants of ant species density in New England bogs and forests. Ecology 83: 1604-1609.
+
+
