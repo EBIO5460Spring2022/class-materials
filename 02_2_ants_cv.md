@@ -24,7 +24,7 @@ forest_ants %>%
     coord_cartesian(ylim=c(0,20))
 ```
 
-![](ants_cv_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+![](02_2_ants_cv_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
 Example of a smoothing spline model. Try running this next block of code
 to visualize the model predictions for different values of `df`. Here is
@@ -32,8 +32,8 @@ df=7.
 
 ``` r
 fit <- smooth.spline(forest_ants$latitude, forest_ants$richness, df=7)
-xx  <- seq(min(forest_ants$latitude), max(forest_ants$latitude), length.out=201)
-preds <- data.frame(predict(fit, xx))
+x_grid  <- seq(min(forest_ants$latitude), max(forest_ants$latitude), length.out=201)
+preds <- data.frame(predict(fit, x=x_grid))
 forest_ants %>% 
     ggplot() +
     geom_point(aes(x=latitude, y=richness)) +
@@ -41,7 +41,7 @@ forest_ants %>%
     coord_cartesian(ylim=c(0,20))
 ```
 
-![](ants_cv_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+![](02_2_ants_cv_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
 Using `predict` to ask for predictions from the fitted smoothing spline
 model.
@@ -81,7 +81,10 @@ predict(fit, x=seq(41, 45, by=0.5))
     ## [1]  9.444714 11.183034 12.912472  8.577191  5.497952  7.031636  6.517861
     ## [8]  6.298994  5.967671
 
-Implement the k-fold CV algorithm.
+Implement the k-fold CV algorithm. First we need a function to create
+the folds. It needs to deal with the common case that the data can’t be
+divided into folds of exactly equal size. Some folds will have an extra
+data point.
 
 ``` r
 # Function to partition a data set into random folds for cross-validation
@@ -98,23 +101,24 @@ random_folds <- function(n, k) {
 }
 ```
 
-What does the output of `random_folds()` look like?
+What is the output of `random_folds()`?
 
 ``` r
 random_folds(nrow(forest_ants), k=5)
 ```
 
-    ##  [1] 5 3 1 3 1 5 5 2 5 3 1 4 2 4 2 3 1 2 1 2 4 4
+    ##  [1] 5 4 4 2 2 5 5 3 1 4 1 2 4 5 3 2 1 3 1 1 2 3
 
 ``` r
 random_folds(nrow(forest_ants), k=nrow(forest_ants)) #k=n is LOOCV
 ```
 
-    ##  [1] 15 13 19 10  3 22 20 16 21  1 18  6 17  4 12  8 14  2  9  7  5 11
+    ##  [1]  3  7 20 14 19 15  6 13  5 12 18  4 21 22 16  8 10 17 11  1  2  9
 
 Now code up the k-fold CV algorithm to estimate the prediction mean
-squared error for one value of df. Try 5-fold, 10-fold, and n-fold. Try
-different values of df.
+squared error for one value of df, translating from our pseudocode to R.
+We can run this block of code to try different values of df and to try
+5-fold, 10-fold, and n-fold CV.
 
 ``` r
 df <- 7
@@ -145,13 +149,17 @@ cv_error <- mean(e)
 cv_error
 ```
 
-    ## [1] 15.30882
+    ## [1] 14.3326
 
-Encapsulate the above as a function to explore the accuracy of models
-with differing df and the behavior of the CV algorithm with different
-values for k.
+To help us do some systematic experiments to explore different
+combinations of df and k we can encapsulate the above as a function.
 
 ``` r
+# Function to perform k-fold CV for a smoothing spline on ants data
+# k:       number of folds (scalar, integer)
+# df:      degrees of freedom in smoothing spline (scalar, integer)
+# return:  CV error as RMSE (scalar, numeric)
+#
 cv_ants <- function(k, df) {
     forest_ants$fold <- random_folds(nrow(forest_ants), k)
     e <- rep(NA, k)
@@ -173,7 +181,7 @@ Test the function
 cv_ants(k=5, df=7) 
 ```
 
-    ## [1] 14.48623
+    ## [1] 16.10414
 
 ``` r
 cv_ants(k=nrow(forest_ants), df=7)
@@ -252,7 +260,7 @@ result1 %>%
     geom_line(aes(x=df, y=cv_error, col=factor(k)))
 ```
 
-![](ants_cv_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](02_2_ants_cv_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 We see that RMSE prediction error (cv\_error) increases dramatically for
 df beyond 8 or so. We also see that cv\_error estimates are quite
@@ -266,10 +274,10 @@ the zone with the best performing values for df.
 result1 %>% 
     ggplot() +
     geom_line(aes(x=df, y=cv_error, col=factor(k))) +
-    coord_cartesian(xlim=c(2,8),ylim=c(10,25))
+    coord_cartesian(xlim=c(2,8), ylim=c(10,25))
 ```
 
-![](ants_cv_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](02_2_ants_cv_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 LOOCV (k=22) identifies df=3 as the best performing model, whereas in
 this particular run 10-fold CV identifies df=4 and 5-fold CV identifies
@@ -297,14 +305,16 @@ Plot the first 10 reps for each k-fold
 ``` r
 result2 %>% 
     select(1:12) %>%
+    mutate(k=paste(k, "-fold CV", sep="")) %>%
     pivot_longer(cols="1":"10", names_to="rep", values_to="cv_error") %>% 
+    mutate(rep=as.numeric(rep)) %>% 
     ggplot() +
-    geom_line(aes(x=df, y=cv_error, col=rep)) +
+    geom_line(aes(x=df, y=cv_error, col=factor(rep))) +
     facet_wrap(vars(k)) +
     coord_cartesian(xlim=c(2,8),ylim=c(10,25))
 ```
 
-![](ants_cv_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](02_2_ants_cv_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 We see again that there is more variability for 5-fold CV and for both
 5-fold and 10-fold CV there is so much variability, we’d pick a
@@ -313,21 +323,23 @@ single k-fold run. Averaging across runs would give a better estimate of
 the prediction RMSE.
 
 ``` r
-result2$mean_cv <- apply(result2[,-(1:2)], 1, mean)
+result2$mean_cv <- rowMeans(result2[,-(1:2)])
 ```
 
-Plot shows that averaged across runs, we’d pick the same df as LOOCV
-(k=22). We also see that LOOCV probably underestimates the prediction
-RMSE by a little bit since k=5 is likely a better estimate of the
-prediction RMSE.
+Plotting the results shows that averaged across runs, we’d pick the same
+df as LOOCV (k=22).
 
 ``` r
 loocv <- result1 %>% 
     filter(k == 22, df <= 8)
 
-ggplot() +
-    geom_line(data=result2, aes(x=df, y=mean_cv, col=factor(k))) +
-    geom_line(data=loocv, aes(x=df, y=cv_error, col=factor(k)))
+result2 %>%
+    select(k, df, mean_cv) %>%
+    rename(cv_error=mean_cv) %>%
+    rbind(.,loocv) %>% 
+    ggplot() +
+    geom_line(aes(x=df, y=cv_error, col=factor(k))) +
+    labs(title=paste("Mean across",reps,"k-fold CV runs"), col="k")
 ```
 
-![](ants_cv_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](02_2_ants_cv_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->

@@ -27,8 +27,8 @@ forest_ants %>%
 #' visualize the model predictions for different values of `df`. Here is df=7.
 
 fit <- smooth.spline(forest_ants$latitude, forest_ants$richness, df=7)
-xx  <- seq(min(forest_ants$latitude), max(forest_ants$latitude), length.out=201)
-preds <- data.frame(predict(fit, xx))
+x_grid  <- seq(min(forest_ants$latitude), max(forest_ants$latitude), length.out=201)
+preds <- data.frame(predict(fit, x=x_grid))
 forest_ants %>% 
     ggplot() +
     geom_point(aes(x=latitude, y=richness)) +
@@ -42,7 +42,9 @@ predict(fit, x=43.2)
 predict(fit, x=forest_ants$latitude)
 predict(fit, x=seq(41, 45, by=0.5))
 
-#' Implement the k-fold CV algorithm.
+#' Implement the k-fold CV algorithm. First we need a function to create the
+#' folds. It needs to deal with the common case that the data can't be divided
+#' into folds of exactly equal size. Some folds will have an extra data point.
 
 # Function to partition a data set into random folds for cross-validation
 # n:       length of dataset (scalar, integer)
@@ -57,14 +59,15 @@ random_folds <- function(n, k) {
     return(folds)
 }
 
-#' What does the output of `random_folds()` look like?
+#' What is the output of `random_folds()`?
 
 random_folds(nrow(forest_ants), k=5)
 random_folds(nrow(forest_ants), k=nrow(forest_ants)) #k=n is LOOCV
 
 #' Now code up the k-fold CV algorithm to estimate the prediction mean squared
-#' error for one value of df. Try 5-fold, 10-fold, and n-fold. Try different
-#' values of df.
+#' error for one value of df, translating from our pseudocode to R. We can run
+#' this block of code to try different values of df and to try 5-fold, 10-fold,
+#' and n-fold CV.
 
 df <- 7
 k <- 5
@@ -94,10 +97,14 @@ cv_error <- mean(e)
 cv_error
 
 
-#' Encapsulate the above as a function to explore the accuracy of models with
-#' differing df and the behavior of the CV algorithm with different values for
-#' k.
+#' To help us do some systematic experiments to explore different combinations
+#' of df and k we can encapsulate the above as a function.
 
+# Function to perform k-fold CV for a smoothing spline on ants data
+# k:       number of folds (scalar, integer)
+# df:      degrees of freedom in smoothing spline (scalar, integer)
+# return:  CV error as RMSE (scalar, numeric)
+#
 cv_ants <- function(k, df) {
     forest_ants$fold <- random_folds(nrow(forest_ants), k)
     e <- rep(NA, k)
@@ -146,7 +153,7 @@ result1 %>%
 result1 %>% 
     ggplot() +
     geom_line(aes(x=df, y=cv_error, col=factor(k))) +
-    coord_cartesian(xlim=c(2,8),ylim=c(10,25))
+    coord_cartesian(xlim=c(2,8), ylim=c(10,25))
 
 #' LOOCV (k=22) identifies df=3 as the best performing model, whereas in this
 #' particular run 10-fold CV identifies df=4 and 5-fold CV identifies df=6. What
@@ -172,9 +179,11 @@ result2 <- cbind(grid,cv_error)
 
 result2 %>% 
     select(1:12) %>%
+    mutate(k=paste(k, "-fold CV", sep="")) %>%
     pivot_longer(cols="1":"10", names_to="rep", values_to="cv_error") %>% 
+    mutate(rep=as.numeric(rep)) %>% 
     ggplot() +
-    geom_line(aes(x=df, y=cv_error, col=rep)) +
+    geom_line(aes(x=df, y=cv_error, col=factor(rep))) +
     facet_wrap(vars(k)) +
     coord_cartesian(xlim=c(2,8),ylim=c(10,25))
 
@@ -183,15 +192,18 @@ result2 %>%
 #' df on each run. So, we wouldn't want to rely on a single k-fold run.
 #' Averaging across runs would give a better estimate of the prediction RMSE.
 
-result2$mean_cv <- apply(result2[,-(1:2)], 1, mean)
+result2$mean_cv <- rowMeans(result2[,-(1:2)])
 
-#' Plot shows that averaged across runs, we'd pick the same df as LOOCV (k=22).
-#' We also see that LOOCV probably underestimates the prediction RMSE by a
-#' little bit since k=5 is likely a better estimate of the prediction RMSE.
+#' Plotting the results shows that averaged across runs, we'd pick the same df
+#' as LOOCV (k=22).
 
 loocv <- result1 %>% 
     filter(k == 22, df <= 8)
 
-ggplot() +
-    geom_line(data=result2, aes(x=df, y=mean_cv, col=factor(k))) +
-    geom_line(data=loocv, aes(x=df, y=cv_error, col=factor(k)))
+result2 %>%
+    select(k, df, mean_cv) %>%
+    rename(cv_error=mean_cv) %>%
+    rbind(.,loocv) %>% 
+    ggplot() +
+    geom_line(aes(x=df, y=cv_error, col=factor(k))) +
+    labs(title=paste("Mean across",reps,"k-fold CV runs"), col="k")
