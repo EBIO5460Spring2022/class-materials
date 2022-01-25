@@ -16,4 +16,4 @@ Slides: [02_1_slides_ants_CV_&_KNN_algorithm.pdf](02_1_slides_ants_CV_&_KNN_algo
 * `02_3_ants_knn.R` - on your own computer
 
 #### 3. Reading for Wednesday
-TBA
+Review code and slides from week 3 Monday. Identify any questions you may want to ask.
