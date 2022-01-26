@@ -1,0 +1,5 @@
+These are the data in Figure 2.13 from
+
+James G, Witten D, Hastie T, Tibshirani R (2021). An Introduction to Statistical Learning: With Applications in R, Second edition. Springer, New York.
+
+digitized using R package "digitize".
