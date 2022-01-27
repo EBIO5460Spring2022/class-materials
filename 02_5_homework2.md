@@ -1,6 +1,6 @@
 ### Week 2 homework
 
-Setup GitHub, read about predictive performance and cross-validation, code the k-fold CV algorithm and explore predictive performance for a smoothing-spline model with the ants data.
+Video and reading for k nearest neighbors algorithm.
 
 #### 1. Video mini lecture
 
