@@ -1,20 +1,20 @@
-#' ---
-#' title: "Classification in machine learning"
-#' author: Brett Melbourne
-#' date: 26 Jan 2022
-#' output:
-#'     github_document
-#' ---
+Classification in machine learning
+================
+Brett Melbourne
+26 Jan 2022
 
-#' This example is from Chapter 2.2.3 of James et al. (2021). An Introduction to
-#' Statistical Learning. It is the simulated dataset in Fig 2.13.
+This example is from Chapter 2.2.3 of James et al. (2021). An
+Introduction to Statistical Learning. It is the simulated dataset in Fig
+2.13.
 
-#+ results=FALSE, message=FALSE, warning=FALSE
+``` r
 library(ggplot2)
 library(dplyr)
+```
 
-#' Orange-blue data:
+Orange-blue data:
 
+``` r
 orbludat <-  read.csv("data/orangeblue.csv")
 
 orbludat %>% 
@@ -22,14 +22,17 @@ orbludat %>%
     geom_point(aes(x=x1, y=x2, col=category), shape=1, size=2) +
     scale_color_manual(values=c("blue","orange")) +
     theme(panel.grid=element_blank())
+```
 
+![](03_3_classification_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
-#' We'll start by expanding the capability of our KNN function to handle
-#' multiple x variables and the classification case with 2 categories. We'll
-#' also handle the case where different categories have identical estimated
-#' probabilities by choosing the predicted category randomly, a standard
-#' strategy in NN algorithms.
+We’ll start by expanding the capability of our KNN function to handle
+multiple x variables and the classification case with 2 categories.
+We’ll also handle the case where different categories have identical
+estimated probabilities by choosing the predicted category randomly, a
+standard strategy in NN algorithms.
 
+``` r
 # KNN function for a data frame of x_new
 # x:       x data of variables in columns (matrix, numeric)
 # y:       y data, 2 categories (vector, character)
@@ -60,23 +63,29 @@ knn_classify2 <- function(x, y, x_new, k) {
     y_pred <- ifelse(abs(p_cat2 - 0.5) < tol, rnd_category, y_pred)
     return(y_pred)
 }
+```
 
+Test the output of the knn\_classify2 function.
 
-#' Test the output of the knn_classify2 function.
+``` r
 nm <- matrix(runif(8), nrow=4, ncol=2)
 knn_classify2(x=as.matrix(orbludat[,c("x1","x2")]),
               y=orbludat$category,
               x_new=nm, 
               k=10)
+```
 
-#' Plot. Use this block of code to try different values of k (i.e. different
-#' numbers of nearest neighbors). There are some important properties of KNN
-#' that you'll notice. Smaller, even values of k will more often have equal
-#' numbers of each category in the neighborhood, leading to random tie breaks.
-#' These zones will show in the plot as speckled intermingling of the two
-#' categories. Since these tie breaks are random, repeated runs will produce
-#' slightly different plots.
+    ## [1] "blue"   "blue"   "orange" "blue"
 
+Plot. Use this block of code to try different values of k
+(i.e. different numbers of nearest neighbors). There are some important
+properties of KNN that you’ll notice. Smaller, even values of k will
+more often have equal numbers of each category in the neighborhood,
+leading to random tie breaks. These zones will show in the plot as
+speckled intermingling of the two categories. Since these tie breaks are
+random, repeated runs will produce slightly different plots.
+
+``` r
 grid_x  <- expand.grid(x1=seq(0, 1, by=0.01), x2=seq(0, 1, by=0.01))
 pred_category <- knn_classify2(x=as.matrix(orbludat[,c("x1","x2")]),
                                y=orbludat$category,
@@ -90,10 +99,13 @@ orbludat %>%
     geom_point(data=preds, aes(x=x1, y=x2, col=category), size=0.5) +
     scale_color_manual(values=c("blue","orange")) +
     theme(panel.grid=element_blank())
+```
 
+![](03_3_classification_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
-#' k-fold CV for KNN. Be careful not to confuse the k's!
+k-fold CV for KNN. Be careful not to confuse the k’s!
 
+``` r
 # Function to partition a data set into random folds for cross-validation
 # n:       length of dataset (scalar, integer)
 # k:       number of folds (scalar, integer)
@@ -128,15 +140,25 @@ cv_orblu <- function(k_cv, k_knn) {
     cv_error <- mean(e)
     return(cv_error)
 }
+```
 
-#' Test the function
+Test the function
 
+``` r
 cv_orblu(k_cv=10, k_knn=10)
+```
+
+    ## [1] 0.1305263
+
+``` r
 cv_orblu(k=nrow(orbludat), k_knn=10) #LOOCV
+```
 
-#' Explore a grid of values for k_cv and k_knn
+    ## [1] 0.1356784
 
-#+ results=FALSE, cache=TRUE
+Explore a grid of values for k\_cv and k\_knn
+
+``` r
 grid <- expand.grid(k_cv=c(5,10,nrow(orbludat)), k_knn=1:16)
 cv_error <- rep(NA, nrow(grid))
 set.seed(6456) #For reproducible results in this text
@@ -145,24 +167,29 @@ for ( i in 1:nrow(grid) ) {
     print(round(100 * i  /nrow(grid))) #monitoring
 }
 result1 <- cbind(grid, cv_error)
+```
 
+Plot the result.
 
-#' Plot the result.
-
+``` r
 result1 %>% 
     ggplot() +
     geom_line(aes(x=k_knn, y=cv_error, col=factor(k_cv))) +
     labs(col="k_cv")
+```
 
-#' We see a lot of variance in all choices for k in the cross validation, which
-#' is partly due to randomly breaking ties in the KNN algorithm and partly due
-#' to random folds of the data. This run of LOOCV (k_cv = 199) identifies the
-#' KNN model with k_knn = 4 nearest neighbors as having the best predictive
-#' performance but if we repeat the above with a different random seed, we get
-#' different answers. Let's look at LOOCV and 5-fold CV with many replicate CV
-#' runs with random folds. This will take about 30 minutes.
+![](03_3_classification_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
-#+ results=FALSE, cache=TRUE
+We see a lot of variance in all choices for k in the cross validation,
+which is partly due to randomly breaking ties in the KNN algorithm and
+partly due to random folds of the data. This run of LOOCV (k\_cv = 199)
+identifies the KNN model with k\_knn = 4 nearest neighbors as having the
+best predictive performance but if we repeat the above with a different
+random seed, we get different answers. Let’s look at LOOCV and 5-fold CV
+with many replicate CV runs with random folds. This will take about 30
+minutes.
+
+``` r
 grid <- expand.grid(k_cv=c(5,nrow(orbludat)), k_knn=1:16)
 reps <- 250
 cv_error <- matrix(NA, nrow=nrow(grid), ncol=reps)
@@ -175,37 +202,44 @@ for ( j in 1:reps ) {
 }
 result2 <- cbind(grid, cv_error)
 result2$mean_cv <- rowMeans(result2[,-(1:2)])
+```
 
-#' Plot the result.
+Plot the result.
 
+``` r
 result2 %>%
     select(k_cv, k_knn, mean_cv) %>%
     rename(cv_error=mean_cv) %>%
     ggplot() +
     geom_line(aes(x=k_knn, y=cv_error, col=factor(k_cv))) +
     labs(title=paste("Mean across",reps,"k-fold CV runs"), col="k_cv")
+```
 
-#' and we could use the following code to print out the detailed numbers:
+![](03_3_classification_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
-#+ results=FALSE
+and we could use the following code to print out the detailed numbers:
+
+``` r
 result2 %>% 
     select(k_cv, k_knn, mean_cv) %>%
     rename(cv_error=mean_cv) %>%
     arrange(k_cv)
+```
 
-#' A very interesting thing we discover, most clear in the 5-fold CV, is that
-#' even numbers for k_knn have a higher error rate. This is because of
-#' randomness in breaking ties. There are few, if any, ties for odd values of
-#' k_knn. Which value for k_knn to choose is not super clear cut with several
-#' possible choices arising. LOOCV continues to look a bit unstable. I would
-#' probably err toward the 5-fold CV because of its larger test set holdout. We
-#' could choose k_knn = 3 or 5, which are essentially equal. I would probably go
-#' for 5 nearest neighbors given the overall shape of the performance curve.
-#'
-#' The result here differs from Fig. 2.17 in James et al. Here, we **estimated**
-#' the error rate as the CV error rate, which is the best we can do given a set
-#' of data. In Fig. 2.17 the error rate is the theoretical error rate from the
-#' underlying "true" categories of the simulated model. Hence the CV error rate
-#' has underestimated the true error rate and identified a different k_knn than
-#' the "true" optimal value.
+A very interesting thing we discover, most clear in the 5-fold CV, is
+that even numbers for k\_knn have a higher error rate. This is because
+of randomness in breaking ties. There are few, if any, ties for odd
+values of k\_knn. Which value for k\_knn to choose is not super clear
+cut with several possible choices arising. LOOCV continues to look a bit
+unstable. I would probably err toward the 5-fold CV because of its
+larger test set holdout. We could choose k\_knn = 3 or 5, which are
+essentially equal. I would probably go for 5 nearest neighbors given the
+overall shape of the performance curve.
 
+The result here differs from Fig. 2.17 in James et al. Here, we
+**estimated** the error rate as the CV error rate, which is the best we
+can do given a set of data. In Fig. 2.17 the error rate is the
+theoretical error rate from the underlying “true” categories of the
+simulated model. Hence the CV error rate has underestimated the true
+error rate and identified a different k\_knn than the “true” optimal
+value.
