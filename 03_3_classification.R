@@ -34,6 +34,14 @@ orbludat %>%
 # k:       number of nearest neighbors to average (scalar, integer)
 # return:  predicted y at x_new (vector, character)
 #
+
+grid_x  <- expand.grid(x1=seq(0, 1, by=0.1), x2=seq(0, 1, by=0.1))
+x=as.matrix(orbludat[,c("x1","x2")])
+                             y=orbludat$category
+                               x_new=as.matrix(grid_x)
+                               k=10
+
+
 knn_classify2 <- function(x, y, x_new, k) {
     category <- unique(y)
     y_int <- ifelse(y == category[1], 0, 1)
@@ -51,15 +59,21 @@ knn_classify2 <- function(x, y, x_new, k) {
         p_cat2[i] <- mean(y_sort[1:k])
     }
     y_pred <- ifelse(p_cat2 > 0.5, category[2], category[1])
+    rand_cat = sample(category, n, replace=TRUE)
+    y_pred <- ifelse(abs(p_cat2 - 0.5) < 10e-12, rand_cat, y_pred)
     return(y_pred)
 }
 
-#' Test the output of the knn_classify2 function.
+rands = ifelse(abs(p_cat2 - 0.5) < 10e-12, sample(category, n, replace=TRUE), y_pred)
+zeros = abs(p_cat2 - 0.5) < 10e-12
+cbind(p_cat2, y_pred, zeros, rand_cat, y_pred2)
 
+#' Test the output of the knn_classify2 function.
+nm <- matrix(runif(8),nrow=4,ncol=2)
 knn_classify2(x=as.matrix(orbludat[,c("x1","x2")]),
               y=orbludat$category,
-              x_new=matrix(runif(8),nrow=4,ncol=2), 
-              k=4)
+              x_new=nm, 
+              k=10)
 
 #' Plot. Use this block of code to try different values of k (i.e. different
 #' numbers of nearest neighbors).
@@ -68,7 +82,7 @@ grid_x  <- expand.grid(x1=seq(0, 1, by=0.01), x2=seq(0, 1, by=0.01))
 pred_category <- knn_classify2(x=as.matrix(orbludat[,c("x1","x2")]),
                                y=orbludat$category,
                                x_new=as.matrix(grid_x),
-                               k=4)
+                               k=10)
 preds <- data.frame(grid_x, category=pred_category)
 
 orbludat %>% 
