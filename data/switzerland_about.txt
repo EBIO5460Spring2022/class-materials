@@ -1,0 +1,12 @@
+# Data from eros.usgs.gov
+# Original download is switzerland.csv
+
+# To convert to tidy format:
+library(reshape2) #for melt()
+swissmap <- as.matrix(read.csv("data/switzerland.csv", header=FALSE))
+swissmap <- t(swissmap)[,246:1] #Rotate matrix for plotting
+colnames(swissmap) <- NULL
+rownames(swissmap) <- NULL
+swissmap_tidy <- melt(swissmap) #for matrix will melt all columns
+names(swissmap_tidy) <- c("x","y","Elev_m")
+write.csv(swissmap_tidy, file="data/switzerland_tidy.csv", row.names=FALSE)
