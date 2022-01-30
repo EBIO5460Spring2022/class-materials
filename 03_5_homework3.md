@@ -4,7 +4,7 @@ Code a classification problem. Reading about decision tree algorithms.
 
 #### 1. Coding: classification
 
-The goal of this homework is to find the best performing KNN model to predict the presence or absence of the Willow Tit using elevation as a predictor. This data set is from Royle JA & Dorazio RM (2008) Hierarchical Modeling and Inference in Ecology, p 87. Elevation (altitude) data are from eros.usgs.gov.
+The goal of this homework is to find the best performing KNN model to predict the presence or absence of the Willow Tit, a bird native to Switzerland, using elevation as a predictor. This data set is from Royle JA & Dorazio RM (2008) Hierarchical Modeling and Inference in Ecology, p 87. Elevation (altitude) data are from eros.usgs.gov.
 
 ```R
 library(ggplot2)
