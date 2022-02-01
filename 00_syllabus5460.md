@@ -75,16 +75,18 @@ Paperback versions of just about any Springer text can be purchased by Universit
 
 
 
-#### Grading
-TBA. Here is one idea:
-
+#### Grading & assessment scheme
 Github portfolio of assignment code commits **30%**
 
-Presentation of contemporary literature **30%**
+Present and lead discussion of contemporary papers from the literature **30%**
 
 Participation and peer reviews **10%**
 
-Individual assignment report **30%**
+Individual assignment presentation **30%**
+
+* Choose between a data project or a literature synthesis project
+
+
 
 #### Exams
 There will not be an exam. This material is not suited to exams.
