@@ -56,7 +56,7 @@ knn_classify2 <- function(x, y, x_new, k) {
     }
     y_pred <- ifelse(p_cat2 > 0.5, category[2], category[1])
     # Break ties if probability is equal (i.e. exactly 0.5)
-    rnd_category = sample(category, n, replace=TRUE) #vector of random labels
+    rnd_category <- sample(category, n, replace=TRUE) #vector of random labels
     y_pred <- ifelse(abs(p_cat2 - 0.5) < tol, rnd_category, y_pred)
     return(y_pred)
 }
