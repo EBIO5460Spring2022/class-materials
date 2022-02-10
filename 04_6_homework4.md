@@ -1,6 +1,6 @@
 ### Week 4 homework
 
-Since we missed a class this week due to the snowstorm, we're a bit behind on needed content for homework, so the bulk of this past week's topics will come after Monday's class.
+Due Wed 16 Feb
 
 #### 1. Coding: classification trees
 
