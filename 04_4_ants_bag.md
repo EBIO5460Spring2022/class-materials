@@ -16,6 +16,8 @@ source("source/random_folds.R") #Function is now in our custom library
 registerDoFuture()
 ```
 
+### Bagged regression tree algorithm
+
 Forest ant data:
 
 ``` r
@@ -49,7 +51,7 @@ approaches. One way to potentially improve the predictive performance of
 any base model is bootstrap aggregation, aka **bagging**, an ensemble
 prediction method.
 
-The bagging algorithm:
+**The bagging algorithm:**
 
     for many repetitions
         resample the data with replacement
@@ -95,9 +97,13 @@ forest_ants %>%
 ![](04_4_ants_bag_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 We see that the predictions from the bagged regression tree model are
-smoother than for the single tree. To assess the predictive performance
-of the bagged model against the single tree, we’ll package the bagging
-algorithm in a function and then apply k-fold cross validation.
+smoother than for the single tree.
+
+### Inference algorithm (part 1)
+
+To assess the predictive performance of the bagged model against the
+single tree, we’ll package the bagging algorithm in a function and then
+apply k-fold cross validation.
 
 ``` r
 # Bagged regression tree function
@@ -233,6 +239,8 @@ intensive because we now have three resampling approaches stacked on top
 of each other (bagging, CV, and replicate random folds). This is a good
 time to introduce parallel processing.
 
+### Parallel processing
+
 In previous scripts for the ants data we used the following code with a
 `for` loop to iterate through a large number of replicate random folds.
 Don’t run this code: it will take a long time!
@@ -256,7 +264,7 @@ ts
 ```
 
     ##    user  system elapsed 
-    ##    3.75    0.00    3.75
+    ##    3.64    0.00    3.64
 
 So one run of 5-fold CV with `cv_ants` takes about 3-4 seconds on my
 laptop. Thus, 500 reps using the `for` loop above would take about half
@@ -266,8 +274,8 @@ an hour:
 500 * ts[3] / 60 #minutes
 ```
 
-    ## elapsed 
-    ##   31.25
+    ##  elapsed 
+    ## 30.33333
 
 We can speed this up using parallel computing. To use parallel `for`
 loops, we’ll use the `doFuture` package, already loaded at the beginning
@@ -380,8 +388,11 @@ of time.
 cv_error <- unlist(cv_error)
 ```
 
-A histogram suggests the CV replicates are a bit skewed but more or less
-well behaved
+### Inference algorithm (part 2)
+
+In the previous section we used parallel processing to collect the CV
+error estimates from repeated random splits of 5-fold CV. A histogram
+shows the CV replicates are a bit skewed but more or less well behaved:
 
 ``` r
 hist(cv_error)
@@ -389,7 +400,7 @@ hist(cv_error)
 
 ![](04_4_ants_bag_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
-Estimated prediction error and its Monte Carlo error (about +/- 0.07)
+Estimated prediction error and its Monte Carlo error (12.93 +/- 0.07)
 
 ``` r
 mean(cv_error)
@@ -403,20 +414,50 @@ sd(cv_error) / sqrt(length(cv_error))
 
     ## [1] 0.06941036
 
-The corresponding estimate of prediction error from LOOCV was 13.23 +/-
-0.01.
+The corresponding estimate of prediction error from LOOCV (also from a
+parallel run) was 13.23 +/- 0.01. Updating our model comparison table,
+this puts the bagged regression tree as second after the smoothing
+spline, as ranked by 5-fold CV. However, according to LOOCV (\*), it is
+the worst of the models in the table. We should pay attention to this
+discrepancy. It probably indicates an issue arising from the small
+dataset. I suspect it has to do with the two, almost duplicate, high
+richness points at ca latitude 42.5, which seem to have a high influence
+on the first split of most bootstrapped trees, thus causing an abrupt
+change in the prediction at that point. What the CV discrepancy seems to
+tell us is that the bagged regression tree is a good predictive model in
+general (according to 5-fold CV) but may have some issues for this
+dataset (according to LOOCV). We should perhaps be careful predicting
+from the bagged model trained with both of these influential points
+present (it might be best to drop one of the points). Prediction from a
+small dataset is always dangerous as it is difficult for a small dataset
+to be representative enough that it generalizes well.
 
-There is one tuning parameter in the bag algorithm: boot\_reps; the
-number of bootstrap replications. Increasing boot\_reps will decrease
-the prediction variance and usually the out-of-sample prediction error;
-the more bootstrap replications the better. However, there are
-diminishing returns and the computational cost increases. Because of the
-bootstrap samples, the `bagrt()` algorithm is stochastic: the final
-prediction will be different each time we run `bagrt()` (unless we set a
-seed). This stochasticity causes prediction variance, which is defined
-as the variance in the bagged prediction over repeated runs of the
-algorithm on the same data. The prediction variance contributes to the
-prediction error, so reducing it, as bagging does, is a good thing.
+| Model              | LOOCV   | 5-fold CV |
+|--------------------|---------|-----------|
+| Polynomial 2       | 12.88   | 13.51     |
+| Single reg tree    | 12.68   | 13.15     |
+| KNN 7              | 12.63   | 13.03     |
+| KNN 6              | 12.95   | 13.01     |
+| Bagged reg tree    | 13.23\* | 12.93     |
+| Smoothing spline 3 | 12.52   | 12.77     |
+
+### Tuning the boot\_reps parameter
+
+There is one tuning parameter in the bagging algorithm: boot\_reps; the
+number of bootstrap replications. In the above, I had already tuned this
+parameter. Here, I’ll show how this was done. This will also provide
+some insight into how and why bagging works.
+
+Increasing boot\_reps will decrease the prediction variance and usually
+the out-of-sample prediction error; the more bootstrap replications the
+better. However, there are diminishing returns and the computational
+cost increases. Because of the bootstrap samples, the `bagrt()`
+algorithm is stochastic: the final prediction will be different each
+time we run `bagrt()` (unless we set a seed). This stochasticity causes
+prediction variance, which is defined as the variance in the bagged
+prediction over repeated runs of the algorithm on the same data. The
+prediction variance contributes to the prediction error, so reducing it
+by bagging is a good thing.
 
 The following experiment of 20 runs on the same data of the `bagrt()`
 algorithm for different values of boot\_reps shows how the prediction
@@ -454,10 +495,10 @@ replications the 20 realizations are almost all the same, and 500
 bootstrap replications is nearly as good as 1000 at reducing the
 variance.
 
-The out-of-sample prediction error similarly goes down. This experiment
-will take a long time to run. I ran it on a dedicated compute server
-with 22 fast cores where it took 35 minutes. We’ll load the saved output
-for analysis and plotting.
+The out-of-sample prediction error similarly goes down. The following
+experiment is the tuning algorithm, and it will take a long time to run.
+I ran it on a dedicated compute server with 22 fast cores where it took
+35 minutes. We’ll load the saved output for analysis and plotting.
 
 ``` r
 # Version of cv_ants with a boot_reps argument
@@ -477,7 +518,7 @@ cv_ants_br <- function(data, k, boot_reps) {
     return(cv_error)
 }
 
-# Experiment (run parallel)
+# Tuning experiment (run parallel)
 set.seed(4106)
 reps <- 506 #number of CV splits (expected precision +/- 0.07)
 boot_reps <- rep(c(5, seq(10, 90, 10), seq(100, 1000, 100)), each=reps)
@@ -494,7 +535,8 @@ Save or load the job
 load("04_4_ants_bag_files/saved/br_experiment.Rdata")
 ```
 
-Calculate and plot the mean CV error as a function of boot\_reps
+Calculate and plot the mean CV error (with it’s Monte Carlo error) as a
+function of boot\_reps
 
 ``` r
 data.frame(cv_error=unlist(cv_error_br), boot_reps) %>% 
@@ -518,16 +560,27 @@ data.frame(cv_error=unlist(cv_error_br), boot_reps) %>%
 
 ![](04_4_ants_bag_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
-We see that the prediction error settles down quickly after about 200
-boot\_reps. We shouldn’t pay too much attention to the lowest value at
-400 as this is probably noise. The error bars are the standard error of
-the mean. A setting of 500 bootstrapped trees seems a good choice. We
-have now finished tuning the `boot_reps` parameter using the k-fold CV
-inference algorithm. We had already set `boot_reps=500` as the default
-for the `bagrt()` function, so we’ll leave it as is.
+We see that the prediction error declines rapidly and settles down after
+about 200 boot\_reps. The blue curve is a loess smoother fitted to the
+points to help judge the mean result. We shouldn’t pay too much
+attention to the lowest point at boot\_reps = 400 as this is probably
+noise. The error bars are the standard error of the mean, a measure of
+the Monte Carlo error (as we increase the number of replicate CV splits
+to infinity, the Monte Carlo error approaches zero, so we can always
+reduce this by increasing the number of CV splits). From the plot, a
+setting of 500 bootstrapped trees seems a good choice for `boot_reps`
+but if we were especially concerned about computation time we could
+probably safely reduce this to 400. Computation time is linearly related
+to boot\_reps, so reducing from 500 to 400 would only lower computation
+time by 20%. We have now finished tuning the `boot_reps` parameter using
+the k-fold CV inference algorithm. In “Inference algorithm (parts 1-2)”
+above, I used `boot_reps=500`, which was set as the default for the
+`bagrt()` function.
 
-Bagging extends easily to multiple predictors of mixed type (numeric,
-categorical).
+### Extensions
+
+Bagged decision trees extend easily to multiple predictors of mixed type
+(numeric, categorical).
 
 ``` r
 # Ant data with multiple predictors
@@ -551,8 +604,9 @@ ants %>%
 
 ![](04_4_ants_bag_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
 
-Bagging extends easily to different base models too. Here is a bagged
-KNN model.
+Bagging extends easily to different base models too. For example, we
+could have a polynomial or nearest neighbor as the base model, or indeed
+any kind of model. Here is a bagged KNN model.
 
 ``` r
 # KNN function for a vector of x_new
@@ -619,15 +673,16 @@ forest_ants %>%
 
 ![](04_4_ants_bag_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
-Finally, bagged decision trees are a special case of random forests
-where the predictors are not randomly selected. So, in general, we can
-use a random forests algorithm to do bagged regression and
-classification trees. We will look at random forests next but in the
+Finally, bagged decision trees are a special case of the random forest
+algorithm where the predictors are not randomly selected. So, in
+general, we can use a random forest algorithm to do bagged regression
+and classification trees. We will look at random forest next but in the
 meantime here is a bagged regression tree for the ants data using the
-`randomForest` package that is similar to our earlier code (presumably
-the differences are due to differences in the base decision tree
-algorithm). To do bagging, we set `mtry` equal to the number of
-predictors. We would want to tune the `nodesize` parameter.
+`randomForest` package that produces similar results to our earlier code
+(presumably the differences are due to differences in the base decision
+tree algorithm). To do bagging, we set `mtry` equal to the number of
+predictors. We would want to tune the `nodesize` parameter, which I have
+not done here.
 
 ``` r
 library(randomForest)
