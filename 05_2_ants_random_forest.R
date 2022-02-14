@@ -10,11 +10,10 @@
 
 #+ results=FALSE, message=FALSE, warning=FALSE
 library(ggplot2)
-library(viridis) #For nice color scale
 library(dplyr)
 library(tidyr)
 library(tree)
-#library(randomForest)
+library(randomForest)
 #library(doFuture) #For parallel processing
 #library(doRNG) #For safe random numbers in parallel processing
 source("source/random_folds.R")
@@ -89,7 +88,8 @@ for ( i in 1:boot_reps ) {
 rf_preds <- rowMeans(boot_preds)
 
 #' Plot predictions with elevation mapped to the viridis color scale (this color
-#' scale has [nice properties](https://cran.r-project.org/web/packages/viridis/vignettes/intro-to-viridis.html)).
+#' scale has [nice properties](https://cran.r-project.org/web/packages/viridis/vignettes/intro-to-viridis.html)). 
+#' It's available directly from `ggplot()` without loading an extra package.
 
 preds <- cbind(grid_data, richness=rf_preds)
 ants %>% 
@@ -99,7 +99,7 @@ ants %>%
               linetype=2) +
     geom_point(aes(x=latitude, y=richness, col=elevation)) +
     facet_wrap(vars(habitat)) +
-    scale_color_viridis() +
+    scale_color_viridis_c() +
     theme_bw()
 
 #' Before moving on, we'll make the algorithm into a function. We're not
@@ -148,7 +148,7 @@ random_forest <- function(formula, data, xnew_data, m, boot_reps=500) {
 
 #' Here's how to call it. Check that it works using plotting code above to
 #' confirm the plot is the same. The notation `~ .` means use all the predictor
-#' variables in the dataset.
+#' variables in the data frame.
 
 preds_rf <- random_forest(richness ~ ., data=ants, xnew_data=grid_data, m=2)
 
@@ -169,5 +169,66 @@ cbind(grid_data, preds_rf, preds_bag, preds_tree) %>%
               linetype=2) +
     geom_point(data=ants, aes(x=latitude, y=richness, col=elevation)) +
     facet_grid(rows=vars(model), cols=vars(habitat)) +
-    scale_color_viridis() +
+    scale_color_viridis_c() +
     theme_bw()
+
+
+#' Using `randomForest()` from the randomForest package. Compared with our proof
+#' of concept code, the difference is due to the implementation and default
+#' settings of the base tree algorithm.
+
+rf_pkg_train <- randomForest(richness ~ ., data=ants, ntree=500, mtry=2)
+preds_rf_pkg <- predict(rf_pkg_train, newdata=grid_data)
+
+cbind(grid_data, preds_rf, preds_rf_pkg) %>% 
+    pivot_longer(cols=starts_with("preds_"), 
+                 names_to="model",
+                 names_prefix="preds_",
+                 values_to="richness") %>%
+    ggplot() +
+    geom_line(aes(x=latitude, y=richness, col=elevation, group=factor(elevation)),
+              linetype=2) +
+    geom_point(data=ants, aes(x=latitude, y=richness, col=elevation)) +
+    facet_grid(rows=vars(model), cols=vars(habitat)) +
+    scale_color_viridis_c() +
+    labs(title="Top row: proof of concept code. Bottom row: randomForest package") +
+    theme_bw()
+
+#' Why are about 1/3 out of bag? Because we are sampling n with replacement.
+#' Here's a quick simulation sampling with replacement from n=100 rows.
+
+reps <- 100000
+n_in_bag <- rep(NA, reps)
+for ( i in 1:reps ) {
+    inbag <- sample(1:100, size=100, replace=TRUE)
+    inbag <- unique(inbag)
+    n_in_bag[i] <- sum(1:100 %in% inbag)
+}
+OOB <- 100 - mean(n_in_bag)
+OOB #36.6% are out of bag
+
+#' Tuning the random forest algorithm. We can use out-of-bag error for number of
+#' trees and mtry.
+
+# Visualize OOB error for number of trees
+plot(rf_pkg_train)
+
+# OOB error for mtry
+tuneRF(x=ants[,-1], y=ants[,1], mtryStart=3, ntreeTry=500)
+
+#' For `tuneRF()` with OOB samples, it is of course stochastic and could vary a
+#' lot from run to run on small datasets like `ants`, just as we've seen such
+#' tuning stochasticity with k-fold CV. Use k-fold CV if necessary and with
+#' repeated random splits if necessary.
+
+#' In general, we want to tune number of trees, mtry, and the minimum node size
+#' of trees (a tree stopping rule). You would proceed as in `ants_bag.R`.
+
+#' Variable importance.
+
+importance(rf_pkg_train)
+varImpPlot(rf_pkg_train)
+
+
+
+
