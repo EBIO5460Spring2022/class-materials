@@ -113,7 +113,8 @@ qplot(1:ntrees, ssq, xlab="Iteration (number of trees)")
 #' Boosted regression trees are implemented in the gbm package
 
 boost_ants1 <- gbm(richness ~ ., data=ants, distribution="gaussian", 
-                  n.trees=1000, interaction.depth=1, shrinkage=0.01)
+                  n.trees=1000, interaction.depth=1, shrinkage=0.01,
+                  bag.fraction=1)
 boost_preds <- predict(boost_ants1, newdata=grid_data)
 
 preds <- cbind(grid_data, richness=boost_preds)
@@ -126,7 +127,6 @@ ants %>%
     facet_wrap(vars(habitat)) +
     scale_color_viridis_c() +
     theme_bw()
-
 
 
 
