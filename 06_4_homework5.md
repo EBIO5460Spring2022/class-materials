@@ -36,7 +36,7 @@ Outline of New Zealand
 
 ```R
 nzpoly <- disBorder("NZ")
-class(nzpoly) #sf = shapefile; common GIS format for vector objects
+class(nzpoly) #sf = simple features; common geospatial format
 ```
 
 Plot presence (1) absence (0) data
