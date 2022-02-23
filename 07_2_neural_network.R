@@ -71,74 +71,44 @@ grid_data  <- expand.grid(
 # data preparation: scale, dummy encoding, convert to matrix
 x <- grid_data %>% 
     mutate(across(where(is.numeric), scale)) %>% 
-    mutate(hab_forest=ifelse(habitat=="forest", 1, 0)) %>% 
-    mutate(hab_bog=ifelse(habitat=="bog", 1, 0)) %>%
-    select(where(is.numeric)) %>%                 #drop original categorical var
-    as.matrix()
+    model.matrix(~ . -1, .)
 
 # dimensions of x
 n <- nrow(x)
 p <- ncol(x)
 
-# add intercept column to x to form the model matrix
-mmx <- cbind(rep(1, n), x)
-
 # set K
-K <- 10
+K <- 5
 
 # set parameters
-w <- rnorm(20) %>% matrix(nrow=K, ncol=p+1)
-beta <- rnorm(5) %>% matrix(nrow=K+1, ncol=1)
+w1 <- c(-0.96660703,  0.10571498,  0.2010671, -0.86535341,
+        -0.30506051, -0.09064804,  0.7194443,  0.21766625,
+         0.03310419, -0.07996691,  0.2330788, -0.00206342,
+        -0.55194455,  0.34334779,  1.6975850, -0.73369455,
+        -0.32670146,  0.26837730, -0.7647074,  0.57788116) %>%
+    matrix(nrow=5, ncol=4, byrow=TRUE)
 
-w <- w_hat
-beta <- beta_hat
+b1 <- c(0.1678398, 0.9261078, -0.2951148, 0.6162176, -0.3971323)
 
-# hidden layer, iterating over each activation unit
+w2 <- c(0.4636577, 1.590001, -0.706589, 1.67491, -0.4370111) %>% 
+    matrix(nrow=1, ncol=5, byrow=TRUE)
+
+b2 <- 1.312699
+
+# hidden layer 1, iterating over each activation unit
 A <- matrix(NA, nrow=n, ncol=K)
 for ( k in 1:K ) {
 #   linear predictor (via model matrix)
-    z <- mmx %*% t(w[k,,drop=FALSE])
+    z <- x %*% t(w1[k,,drop=FALSE]) + b1[k]
 #   nonlinear activation
     A[,k] = g_relu(z)
 }
 
-# output layer, linear model (via model matrix)
-mmA <- cbind(rep(1, n), A) #model matrix for A
-f_x <- mmA %*% beta
+# output layer 2, linear model
+f_x <- A %*% t(w2) + b2
 
 # return f(x)
 nn1_preds <- f_x
-
-#' In the code above, we twice constructed a model matrix for use in the linear
-#' algebra steps. We could instead have used the R-centric:
-
-#+ eval=FALSE
-model.matrix(~ ., x)
-
-#' but I find the code above more portable (i.e. the algorithm is easily
-#' rewritten for another language) and more literal for understanding the matrix
-#' workflow. We also hand-constructed the dummy variables and we could do that
-#' more conveniently with `model.matrix`, where the formula expression drops the
-#' intercept term to fully expand the categorical variable:
-
-#+ eval=FALSE
-x <- grid_data %>% 
-    mutate(across(where(is.numeric), scale)) %>% 
-    model.matrix(~ . -1, .)
-
-#' We would still need to add an intercept column to form a full model matrix
-#' for the linear algebra step. We could do it all in one piped operation with
-#' two calls to `model.matrix` and a dataframe conversion in between but this is
-#' obviously fairly obtuse:
-#' 
-
-#+ eval=FALSE
-mmx <- grid_data %>% 
-    mutate(across(where(is.numeric), scale)) %>% 
-    model.matrix(~ . -1, .) %>% 
-    data.frame() %>% 
-    model.matrix(~ ., .)
-
 
 #' Plot predictions
 
@@ -158,14 +128,12 @@ ants %>%
  
 xtrain <- ants[,-1] %>% 
     mutate(across(where(is.numeric), scale)) %>% 
-    mutate(hab_forest=ifelse(habitat=="forest", 1, 0)) %>% 
-    mutate(hab_bog=ifelse(habitat=="bog", 1, 0)) %>%
-    select(where(is.numeric)) %>%                 #drop original categorical var
-    as.matrix()
+    model.matrix(~ . -1, .)
+
 ytrain <- ants[,1]
 
 modnn <- keras_model_sequential() %>%
-    layer_dense(units = 10, activation = "relu", 
+    layer_dense(units = 5, activation = "relu", 
                 input_shape = ncol(x)) %>%
     layer_dropout(rate = 0.2) %>%
     layer_dense(units = 1)
@@ -176,13 +144,12 @@ modnn %>% compile(loss = "mse",
                   
 summary(modnn)
 
-fitnn <- fit(modnn, xtrain, ytrain, epochs = 800, batch_size=44)
-
+fitnn <- fit(modnn, xtrain, ytrain, epochs = 800, batch_size=32)
 plot(fitnn)
+get_weights(modnn)
+
 
 npred <- predict(modnn, x)
-summary(fitnn)
-coef(modnn)
 
 preds <- cbind(grid_data, richness=npred)
 ants %>% 
@@ -195,6 +162,4 @@ ants %>%
     scale_color_viridis_c() +
     theme_bw()
 
-wts <- get_weights(modnn)
-w_hat <- t(rbind(wts[[2]], wts[[1]]))
-beta_hat <- t(t(c(wts[[4]], wts[[3]])))
+
