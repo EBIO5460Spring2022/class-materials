@@ -1,0 +1,1 @@
+This directory contains downloaded datasets that are very large. Files here are excluded from version control (i.e. gitignored).
