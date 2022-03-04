@@ -7,18 +7,17 @@
 #' ---
 
 #' We are using a standard benchmark dataset, CIFAR100 but subsetted to images
-#' in ecological categories.
+#' in ecological categories. This script has minimal commentary.
 
 #+ results=FALSE, message=FALSE, warning=FALSE
 library(ggplot2)
 library(dplyr)
-library(jpeg)
 library(keras)
 tensorflow::set_random_seed(2726)
 
 #' Read local copy of the data labels
 
-fine_label_names <- read.csv("data/cifar100_fine_label_names.csv")
+label_names <- read.csv("data/cifar100_fine_label_names.csv")
 
 #' Download the CIFAR100 dataset. Warning: 169 MB. Since it's large, we'll store
 #' it locally in a directory for temporary data and remember to put it in
@@ -38,7 +37,7 @@ str(cifar100)
 
 #' Subset to the ecology images (including human)
 
-ecosubset <- subset(fine_label_names, ecology==TRUE)
+ecosubset <- subset(label_names, ecology==TRUE)
 head(ecosubset, 20)
 train_eco <- which(cifar100$train$y %in% ecosubset$label)    
 test_eco <- which(cifar100$test$y %in% ecosubset$label)
@@ -48,39 +47,71 @@ x_test <- cifar100$test$x[test_eco,,,]
 y_test <- cifar100$test$y[test_eco,, drop=FALSE]
 
 #' What do we have?
+#' 
+
+#' For x we have 30500 images, each 32 x 32 pixels in 3 channels (RGB), arranged
+#' in a 4D array. Pixel values range from 0-255.
 
 dim(x_train)
 class(x_train)
-hist(sample(x_train, 5000))
 range(x_train)
+hist(sample(x_train, 5000))
+
+#' For y we have integers coding for 61 categories arranged in a 2D array (1
+#' column matrix).
+
 dim(y_train)
 class(y_train)
+head(y_train)
 sort(unique(y_train)) #61 ecological categories
 
-#' Data preparation. Convert image data to 0-1 scale. Convert integer response
-#' to a dummy variable representation suitable for keras/tensorflow. This must
-#' have integer category labels that range from 0 to m - 1, where m is the
-#' number of categories. This is because tensorflow and python array indices
-#' start at 0 (compared to R, where indices start at 1).
+#' Data preparation 1: convert image data to 0-1 scale.
 
 x_train <- x_train / 255
 x_test <- x_test / 255
 
-# The following `for` loops are a bit distracting but here we're generating new
-# integers for the 61 ecology categories. The corresponding original and new
-# labels are in ecosubset.
+#' Data preparation 2: generate new integers for the 61 ecology categories. This
+#' must have integer category labels that range from 0 to m - 1, where m is the
+#' number of categories. This is because tensorflow and python array indices
+#' start at 0 (compared to R, where indices start at 1). 
+
 ecosubset$ecolabel <- 0:60
+
+#' Here are the corresponding original and new labels (`label` vs `ecolabel`).
+
+head(ecosubset, 10)
+
+#' Now make the new integer response using the lookup table in `ecosubset`.
+
 for ( i in 1:nrow(y_train) ) {
     y_train[i,] <- ecosubset$ecolabel[ecosubset$label==y_train[i,]]
 }
 for ( i in 1:nrow(y_test) ) {
     y_test[i,] <- ecosubset$ecolabel[ecosubset$label==y_test[i,]]
 }
-data.frame(ecolabel=y_train[1:10,], name=ecosubset$name[y_train[1:10,]+1]) #Check first 10
-y_int <- y_train #keep a copy of the integer version
-y_train <- to_categorical(y_train, 61) #make dummy version
+
+#' Check the first 10 (e.g. compare with ecosubset above)
+
+data.frame(y_train[1:10,], name=ecosubset$name[y_train[1:10,]+1])
+
+#' Data preparation 3: convert integer response to a dummy variable matrix
+#' suitable for keras/tensorflow. We'll use the `to_categorical()` function from
+#' `keras` to do that.
+
+y_train_int <- y_train #keep a copy of the integer version
+y_train <- to_categorical(y_train, 61)
+
+#' The result is a matrix with 61 columns, 1 column for each category of
+#' organism.
+
 class(y_train)
-y_train[1:6,1:14]
+dim(y_train)
+
+#' Looking at a portion of the matrix (upper left 6x14) we see we have rows of
+#' zeros and ones, with a 1 in the column that represents the category of the
+#' organism in the image.
+
+y_train[1:6,1:14] 
 
 #' There are 500 images in each category
 
@@ -91,7 +122,7 @@ colSums(y_train)
 par(mar=c(0,0,0,0), mfrow=c(5,5))
 for (i in sample(1:dim(x_train)[1], 25) ) {
     plot(as.raster(x_train[i,,,]))
-    text(0, 30, labels=ecosubset$name[y_int[i,]+1], col="red", pos=4)
+    text(0, 30, labels=ecosubset$name[y_train_int[i,]+1], col="red", pos=4)
 } 
 
 #' Each image has 3 channels: RGB
@@ -138,9 +169,22 @@ modcnn1 <- keras_model_sequential(input_shape=c(32,32,3)) %>%
     layer_dense(units=61) %>% 
     layer_activation_softmax()
 
+#' Check the architecture
+
 modcnn1
 
-#' Compile and fit
+#' We see that the model has almost 1 million parameters! For example, in the
+#' first convolutional layer we have 32 filters, each 3x3, for each of the 3
+#' input channels (RGB), so 32 x 3 x 3 x 3 = 864 weights to which we add 32 bias
+#' parameters (one for each output channel) to give 896 parameters. In the
+#' second convolutional layer we have 64 x 3 x 3 x 32 + 64 = 18496, and so on.
+#' At the input to the dense feedforward network where the array is flattened we
+#' have 1024 nodes connected to 512 nodes, so 1024 x 512 weights + 512 biases =
+#' 524800 parameters. Nevertheless, we do have a lot of data, about 94 million
+#' pixels (30500 x 32 x 32 x 3).
+#' 
+
+#' Compile, and fit with an 80/20 train/validate split
 #+ eval=FALSE
 
 compile(modcnn1,
@@ -160,23 +204,21 @@ fit(modcnn1, x_train, y_train,
 modcnn1 <- load_model_hdf5("08_3_convolutional_nnet_files/saved/modcnn1.hdf5")
 load("08_3_convolutional_nnet_files/saved/modcnn1_history.Rdata")
 
-#' Training history
+#' Training history. We see evidence of overfitting after about 20 epochs as the
+#' validation loss begins to climb again.
 
 plot(history, smooth=FALSE)
 
-#' Plot a selection of predictions
+#' Plot a random selection of predictions
 
-plot_one_pred <- function(i) {
+selection <- sort(sample(1:dim(x_test)[1], 16))
+par(mar=c(0,0,0,0), mfrow=c(4,4))
+for ( i in selection ) {
     pred <- as.numeric(predict(modcnn1, x_test[i,,,,drop=FALSE]))
     plot(as.raster(x_test[i,,,]))
     text(0, 30, paste("prediction =", ecosubset$name[which.max(pred)]), col="red", pos=4)
     text(0, 28, paste("prob =", round(pred[which.max(pred)],2)), col="red", pos=4)
     text(0, 26, paste("actual =", ecosubset$name[y_test[i,]+1]), col="red", pos=4)
-}
-
-par(mar=c(0,0,0,0), mfrow=c(4,4))
-for (i in sample(1:dim(x_test)[1], 16) ) {
-    plot_one_pred(i)
 } 
 
 #' Predictions and overall accuracy
@@ -185,17 +227,17 @@ pred_prob <- predict(modcnn1, x_test)
 pred_cat <- as.numeric(k_argmax(pred_prob))
 mean(pred_cat == drop(y_test))
 
-#' Plot probabilities for a selection of test cases
+#' Plot probabilities for the same selection of test cases as above
 
 pred_prob %>% 
     data.frame() %>% 
     mutate(case=seq(nrow(.))) %>%
-    tidyr::pivot_longer(cols=starts_with("X"), names_to="species", values_to="probability") %>% 
-    mutate(species=as.integer(sub("X", "", species)) - 1) %>% 
-    filter(case %in% sample(1:6100, 25)) %>% 
+    tidyr::pivot_longer(cols=starts_with("X"), names_to="category", values_to="probability") %>% 
+    mutate(category=as.integer(sub("X", "", category)) - 1) %>% 
+    filter(case %in% selection) %>% 
     ggplot() +
-    geom_point(aes(x=species, y=probability)) +
-    facet_wrap(vars(case), nrow=5, ncol=5, labeller=label_both)
+    geom_point(aes(x=category, y=probability)) +
+    facet_wrap(vars(case), nrow=4, ncol=4, labeller=label_both)
     
     
 
