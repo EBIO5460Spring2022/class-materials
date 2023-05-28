@@ -24,7 +24,7 @@ Machine learning is an exciting topic and recent advances are set to revolutioni
 * Machine learning: algorithms for prediction
 * Predictive accuracy and the bias-variance tradeoff
 * Inference algorithm: cross validation
-* Model algorithm: smoothers
+* Model algorithm: knn, smoothers, polynomials
 * Training algorithm (optimizer + cost function)
 * Regularization and penalized optimization
 * Decision tree models (regression, classification)
@@ -34,6 +34,12 @@ Machine learning is an exciting topic and recent advances are set to revolutioni
 * Neural network model architectures for different problems
 * Training strategies for deep learning
 * Contemporary and emerging applications of machine learning in ecology
+
+
+
+Schedule of topics is [here](00_timetable.md).
+
+
 
 #### Where is it pitched?
 This is a practical class. Our aim is to understand the concepts, theory, and algorithms behind the main categories of machine learning algorithms and in particular be able to place any machine learning tool, that typically consists of a collection of algorithms, within a wider data-science context and to identify strengths and weaknesses in its application and when and where it can appropriately be used. A further goal is to be able to combine fundamental algorithms to make your own tools for specific applications. I will try to develop an intuitive understanding of the foundational algorithms and concepts mostly through stochastic simulation and coding plus a bit of basic math. You will code and apply these algorithms to your own datasets. From this foundation you should be able to go deeper through self study.
