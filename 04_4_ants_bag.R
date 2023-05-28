@@ -271,7 +271,7 @@ class(cv_error)
 head(cv_error)
 
 #' We can convert this to a vector with `unlist()` or to a data.frame with
-#' `dplyr::bind_row()`, or use the `.combine` argument of `foreach` ahead of
+#' `dplyr::bind_rows()`, or use the `.combine` argument of `foreach` ahead of
 #' time.
 #' 
 
